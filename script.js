@@ -1,4 +1,4 @@
-// Collins Technical - minimal JS for nav + form validation + nicer submission UX
+// Collins Technical - minimal JS for nav + CTA lane prefill + form validation + Formspree submit UX
 (function () {
   const yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
@@ -20,21 +20,41 @@
     });
   }
 
+  // CTA lane prefill: set inquiry type when user clicks a lane CTA
+  document.querySelectorAll("[data-lane]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-lane");
+      const inquiry = document.getElementById("inquiryType");
+      if (inquiry && val) {
+        setTimeout(() => {
+          inquiry.value = val;
+          const nameEl = document.getElementById("name");
+          (nameEl || inquiry).focus();
+        }, 150);
+      }
+    });
+  });
+
   // Form validation
   const form = document.getElementById("contactForm");
   const statusEl = document.getElementById("formStatus");
+  const replyTo = document.getElementById("replyTo");
 
   const fields = {
     name: { el: document.getElementById("name"), err: "errName", required: true },
     company: { el: document.getElementById("company"), err: "errCompany", required: true },
     email: { el: document.getElementById("email"), err: "errEmail", required: true, type: "email" },
     phone: { el: document.getElementById("phone"), err: "errPhone", required: false, type: "phone" },
-    service: { el: document.getElementById("service"), err: "errService", required: true },
+
+    inquiryType: { el: document.getElementById("inquiryType"), err: "errInquiryType", required: true },
+    urgency: { el: document.getElementById("urgency"), err: "errUrgency", required: true },
+    size: { el: document.getElementById("size"), err: "errSize", required: true },
+    location: { el: document.getElementById("location"), err: "errLocation", required: true },
+    contactPref: { el: document.getElementById("contactPref"), err: "errContactPref", required: true },
+
     message: { el: document.getElementById("message"), err: "errMessage", required: true },
     consent: { el: document.getElementById("consent"), err: "errConsent", required: true, type: "checkbox" }
   };
-
-  const replyTo = document.getElementById("replyTo");
 
   function setError(id, msg) {
     const p = document.getElementById(id);
@@ -46,9 +66,19 @@
   }
 
   function isPhoneLoose(v) {
-    // Accept blank, or a loose set of digits + symbols. You can tighten later if you want.
     if (!v) return true;
     return /^[0-9()+\-\s.]{7,}$/.test(String(v).trim());
+  }
+
+  function validateRequiredSelect(fieldKey, label) {
+    const f = fields[fieldKey];
+    const v = (f.el.value || "").trim();
+    if (!v) {
+      setError(f.err, `Please select ${label}.`);
+      return false;
+    }
+    setError(f.err, "");
+    return true;
   }
 
   function validate() {
@@ -78,10 +108,12 @@
     if (!isPhoneLoose(phone)) { setError(fields.phone.err, "Please enter a valid phone number (or leave blank)."); ok = false; }
     else setError(fields.phone.err, "");
 
-    // service
-    const service = fields.service.el.value.trim();
-    if (!service) { setError(fields.service.err, "Please select a service."); ok = false; }
-    else setError(fields.service.err, "");
+    // selects
+    ok = validateRequiredSelect("inquiryType", "what this inquiry is about") && ok;
+    ok = validateRequiredSelect("urgency", "how soon you need help") && ok;
+    ok = validateRequiredSelect("size", "an approximate size") && ok;
+    ok = validateRequiredSelect("location", "a location") && ok;
+    ok = validateRequiredSelect("contactPref", "a preferred contact method") && ok;
 
     // message
     const message = fields.message.el.value.trim();
@@ -104,7 +136,7 @@
 
     // Prevent accidental submission without replacing the endpoint
     if ((form.getAttribute("action") || "").includes("REPLACE_ME")) {
-      if (statusEl) statusEl.textContent = "Form endpoint not configured. Replace the Formspree action URL in index.html.";
+      if (statusEl) statusEl.textContent = "Form endpoint not configured yet. Replace the Formspree action URL in index.html.";
       return;
     }
 
@@ -117,7 +149,7 @@
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn ? btn.textContent : "";
     if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
-    if (statusEl) statusEl.textContent = "Sending your request…";
+    if (statusEl) statusEl.textContent = "Sending your inquiry…";
 
     try {
       const formData = new FormData(form);
@@ -129,14 +161,14 @@
 
       if (res.ok) {
         form.reset();
-        if (statusEl) statusEl.textContent = "Success! Your message was sent. We’ll get back to you soon.";
+        if (statusEl) statusEl.textContent = "Success! Your inquiry was sent. We’ll follow up soon.";
       } else {
-        if (statusEl) statusEl.textContent = "Something went wrong sending your message. Please try again or email us directly.";
+        if (statusEl) statusEl.textContent = "Something went wrong sending your inquiry. Please try again or email us directly.";
       }
     } catch (err) {
       if (statusEl) statusEl.textContent = "Network error. Please try again or email us directly.";
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = oldText || "Send request"; }
+      if (btn) { btn.disabled = false; btn.textContent = oldText || "Send Inquiry"; }
     }
   }
 
