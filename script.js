@@ -1,4 +1,4 @@
-// Collins Technical - minimal JS for nav + CTA lane prefill + form validation + Formspree submit UX
+// Little Berry Systems - minimal JS for nav + CTA prefill + form validation + Formspree submit UX
 (function () {
   const yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
@@ -20,7 +20,7 @@
     });
   }
 
-  // CTA lane prefill: set inquiry type when user clicks a lane CTA
+  // CTA lane prefill
   document.querySelectorAll("[data-lane]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const val = btn.getAttribute("data-lane");
@@ -84,44 +84,36 @@
   function validate() {
     let ok = true;
 
-    // name
     const name = fields.name.el.value.trim();
     if (!name) { setError(fields.name.err, "Please enter your name."); ok = false; }
     else setError(fields.name.err, "");
 
-    // company
     const company = fields.company.el.value.trim();
     if (!company) { setError(fields.company.err, "Please enter your company name."); ok = false; }
     else setError(fields.company.err, "");
 
-    // email
     const email = fields.email.el.value.trim();
     if (!email) { setError(fields.email.err, "Please enter your email."); ok = false; }
     else if (!isEmail(email)) { setError(fields.email.err, "Please enter a valid email address."); ok = false; }
     else setError(fields.email.err, "");
 
-    // set reply-to for Formspree convenience
     if (replyTo) replyTo.value = email;
 
-    // phone (optional)
     const phone = fields.phone.el.value.trim();
     if (!isPhoneLoose(phone)) { setError(fields.phone.err, "Please enter a valid phone number (or leave blank)."); ok = false; }
     else setError(fields.phone.err, "");
 
-    // selects
-    ok = validateRequiredSelect("inquiryType", "what this inquiry is about") && ok;
+    ok = validateRequiredSelect("inquiryType", "an inquiry type") && ok;
     ok = validateRequiredSelect("urgency", "how soon you need help") && ok;
     ok = validateRequiredSelect("size", "an approximate size") && ok;
     ok = validateRequiredSelect("location", "a location") && ok;
     ok = validateRequiredSelect("contactPref", "a preferred contact method") && ok;
 
-    // message
     const message = fields.message.el.value.trim();
     if (!message) { setError(fields.message.err, "Please add a short message about what you need."); ok = false; }
     else if (message.length < 20) { setError(fields.message.err, "Please add a bit more detail (at least 20 characters)."); ok = false; }
     else setError(fields.message.err, "");
 
-    // consent
     const consent = fields.consent.el.checked;
     if (!consent) { setError(fields.consent.err, "Consent is required to submit."); ok = false; }
     else setError(fields.consent.err, "");
@@ -134,7 +126,6 @@
     e.preventDefault();
     if (statusEl) statusEl.textContent = "";
 
-    // Prevent accidental submission without replacing the endpoint
     if ((form.getAttribute("action") || "").includes("REPLACE_ME")) {
       if (statusEl) statusEl.textContent = "Form endpoint not configured yet. Replace the Formspree action URL in index.html.";
       return;
